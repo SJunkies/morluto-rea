@@ -40,6 +40,7 @@ import {
   verifyNativeTypeLayout,
   verifyRelativeSwitch,
   verifyRelativeSignedSwitch,
+  verifyIndirectBranches,
   verifyNativeValueTrace,
 } from "./verify-real-ghidra-function.mjs";
 const exec = promisify(execFile);
@@ -230,6 +231,31 @@ try {
       ]);
     }
 
+    const indirectBranchSource = fileURLToPath(
+      new URL(
+        "../tests/conformance/ghidra/indirect-branches.S",
+        import.meta.url,
+      ),
+    );
+    for (const format of [
+      "elf",
+      ...(expectedNativeTarget.architecture === "arm64" ? ["mach-o"] : []),
+    ]) {
+      const targetPath = join(fixtureRoot, `indirect-branches-${format}.o`);
+      await exec(clang, [
+        ...(format === "elf" ? ["--target=aarch64-linux-gnu"] : []),
+        "-c",
+        indirectBranchSource,
+        "-o",
+        targetPath,
+      ]);
+      crossTargets.push([
+        targetPath,
+        "indirect-branches",
+        { format, architecture: "arm64" },
+      ]);
+    }
+
     await exec(clang, [
       "--target=aarch64-linux-gnu",
       "-O2",
@@ -330,6 +356,7 @@ try {
     if (
       variant !== "aarch64-jump-table" &&
       variant !== "removed-block" &&
+      variant !== "indirect-branches" &&
       !variant.startsWith("relative-")
     )
       assertCrossFixture(result);
@@ -589,6 +616,8 @@ async function verifyTarget(targetPath, variant, expectedTarget = null) {
     const probes =
       variant === "removed-block"
         ? await verifyDecompilerRemovedBlock(client, expectedTarget.format)
+        : variant === "indirect-branches"
+          ? await verifyIndirectBranches(client)
         : variant.startsWith("relative-signed-")
           ? await verifyRelativeSignedSwitch(
               client,
