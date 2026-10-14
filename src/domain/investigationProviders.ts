@@ -5,6 +5,7 @@ export const REA_WORKFLOW_PROVIDER = {
   version: "1",
 } as const;
 
+
 /** Provider identity for deterministic artifact inventories. */
 export const ARTIFACT_GRAPH_PROVIDER = Object.freeze({
   id: "rea-artifact-graph",

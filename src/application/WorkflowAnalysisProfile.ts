@@ -19,5 +19,7 @@ export const workflowAnalysisProfile = (
           operation === "get_call_graph" ||
           operation === "trace_feature"
         ? { workflow_revision: 3 }
-        : { workflow_revision: 1 }),
+        : operation === "inspect_native_api"
+          ? { workflow_revision: 2 }
+          : { workflow_revision: 1 }),
   });
