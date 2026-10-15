@@ -68,9 +68,11 @@ const sharedAnalysisSemantics = {
     "address-first-unique-target-source-mapping-v2",
   instruction_flow_evidence: "decoded-return-pcode-v1",
   indirect_branch_inventory: "listing-computed-jumps-typed-warning-address-v2",
+  loader_relocation_semantics: "volatile-read-only-relocation-blocks-v1",
   instruction_references: "exact-address-incoming-without-synthetic-entry-v2",
   function_boundary_observations: "ghidra-function-boundary-limitations-v4",
 } as const;
+
 
 
 /**
@@ -330,6 +332,7 @@ export const resolveGhidraAnalysisProfile = async (
             }
           : {}),
         ...sharedAnalysisSemantics,
+
 
 
         no_return_repair:

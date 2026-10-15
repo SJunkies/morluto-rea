@@ -1138,6 +1138,8 @@ describe("Ghidra client projection", () => {
       indirect_branch_inventory:
         "listing-computed-jumps-typed-warning-address-v2",
 
+      loader_relocation_semantics: "volatile-read-only-relocation-blocks-v1",
+
     });
 
     const result = await ghidra
