@@ -58,7 +58,8 @@ const sharedAnalysisSemantics = {
   function_body_evidence: "complete-inclusive-ranges-v1",
   function_references: "complete-body-and-entry-reference-manager-v2",
   call_relationship_coverage: "function-body-call-coverage-v5",
-  function_dossier_coverage: "observed-facets-and-call-relationships-v1",
+  function_dossier_coverage:
+    "observed-facets-call-relationships-and-decompiler-removals-v2",
   string_inventory_evidence: "defined-data-coverage-v1",
   location_resolution: "explicit-address-exact-entry-symbol-first-v3",
   procedure_file_offset_resolution:
