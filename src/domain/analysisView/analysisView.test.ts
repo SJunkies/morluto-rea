@@ -480,10 +480,16 @@ it("flags pseudocode that omits decompiler-removed blocks", () => {
   };
   const withRemoval = {
     ...original,
-    decompiler_completeness: { removed_blocks: [removed] },
+    decompiler_completeness: {
+      removed_blocks: [removed],
+      unmapped_warnings: ["overlay,0x10"],
+    },
   };
-  expect(view("pseudocode", withRemoval).unknowns).toContain(
-    "pseudocode omits 1 block(s) the decompiler removed as unreachable; see decompiler_removed_blocks",
+  expect(view("pseudocode", withRemoval).unknowns).toEqual(
+    expect.arrayContaining([
+      "pseudocode omits 1 block(s) the decompiler removed as unreachable; see decompiler_removed_blocks",
+      "pseudocode omits 1 further removed block(s) whose addresses could not be mapped: overlay,0x10",
+    ]),
   );
   expect(view("decompiler_removed_blocks", withRemoval)).toMatchObject({
     item: [removed],
@@ -491,7 +497,7 @@ it("flags pseudocode that omits decompiler-removed blocks", () => {
   });
   const inspected = {
     ...original,
-    decompiler_completeness: { removed_blocks: [] },
+    decompiler_completeness: { removed_blocks: [], unmapped_warnings: [] },
   };
   expect(
     view("pseudocode", inspected).unknowns.some((entry) =>
