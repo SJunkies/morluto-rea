@@ -46,7 +46,7 @@ import {
 } from "../domain/rawBinary.js";
 import { admitGamecubeDol } from "../domain/gamecubeDolAdmission.js";
 import { DOL_HEADER_SIZE } from "../domain/gamecubeDol.js";
-import type { BinaryArchitecture } from "../domain/binaryTargetTypes.js";
+import type { BinaryArchitecture, RawProcessorVariant } from "../domain/binaryTargetTypes.js";
 import {
   mzWindowsHeaderLayoutLimitation,
   observeMzWindowsHeader,
@@ -54,6 +54,7 @@ import {
   type DosMzHeader,
   type MzWindowsHeaderObservation,
 } from "../domain/dosMz.js";
+
 import {
   createXmlPlistSignatureProbe,
   hasBinaryPlistSignature,
@@ -111,6 +112,7 @@ export interface BinaryTargetResolverOptions {
   readonly architecture?: BinaryArchitecture;
   readonly entryPoint?: string;
   readonly baseAddress?: string;
+  readonly processorVariant?: RawProcessorVariant;
   readonly signal?: AbortSignal;
   readonly resources?: ArtifactResourceScope;
 }
@@ -129,6 +131,7 @@ export const parseBinaryTarget = async (
 > => {
   const cwd = options.cwd ?? process.cwd();
   const { signal } = options;
+
 
   const candidate = absoluteCallerPath(input, { cwd });
   // Failures before canonicalization concern the selected path itself; later
@@ -182,6 +185,7 @@ export const parseBinaryTarget = async (
     if (cause instanceof RegularFileCleanupFailure) {
       const fileFailure = cause as RegularFileCleanupFailure<TargetResolution>;
       if (options.resources === undefined)
+
 
         return err(
           targetFileCleanupError(
@@ -246,7 +250,7 @@ const readOpenedBinaryTarget = async (
   const { path, sourcePath, bundleInfoPlist } = selected;
   const bundle = bundleInfoPlist === undefined ? {} : { bundleInfoPlist };
   const hostArchitecture = options.hostArchitecture ?? process.arch;
-  const { targetKind, formatHint, signal, architecture, entryPoint, baseAddress } = options;
+  const { targetKind, formatHint, signal, architecture, entryPoint, baseAddress, processorVariant } = options;
   throwIfTargetResolutionCancelled(signal);
   const metadata = await handle.stat();
   throwIfTargetResolutionCancelled(signal);
@@ -263,6 +267,7 @@ const readOpenedBinaryTarget = async (
       architecture,
       entryPoint,
       baseAddress,
+      processorVariant,
       fileBytes: metadata.size,
     });
     if (!admitted.ok)
@@ -284,6 +289,7 @@ const readOpenedBinaryTarget = async (
       entryPointSource: admitted.value.entryPointSource,
       ...(admitted.value.baseAddress === undefined ? {} : { baseAddress: admitted.value.baseAddress }),
       ...(admitted.value.baseAddressSource === undefined ? {} : { baseAddressSource: admitted.value.baseAddressSource }),
+      ...(admitted.value.processorVariant === undefined ? {} : { processorVariant: admitted.value.processorVariant }),
     });
   }
   const pairing = rawBinarySelectionError({
@@ -291,6 +297,7 @@ const readOpenedBinaryTarget = async (
     architecture,
     entryPoint,
     baseAddress,
+    processorVariant,
   });
   if (pairing !== undefined)
     return err(

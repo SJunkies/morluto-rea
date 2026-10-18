@@ -19,6 +19,7 @@ import {
   BINARY_ARCHITECTURES,
   RAW_ONLY_ARCHITECTURES,
   type BinaryTarget,
+  type RawProcessorVariant,
 } from "./binaryTargetTypes.js";
 import {
   evidenceBundleForTarget,
@@ -47,6 +48,7 @@ import {
   rawBinaryEntryPointSchema,
   rawBinaryBaseAddressSchema,
   rawBinaryBaseAddress,
+  rawProcessorVariantSchema,
 } from "./rawBinary.js";
 import {
   relationshipCoverageSchema,
@@ -135,11 +137,22 @@ const targetSchema = z.discriminatedUnion("format", [
       architecture: binaryArchitectureSchema,
       entry_point: rawBinaryEntryPointSchema,
       base_address: rawBinaryBaseAddressSchema.optional(),
+      processor_variant: rawProcessorVariantSchema.optional(),
     })
-    .transform(({ base_address, ...target }): typeof target & { base_address?: string } => ({
-      ...target,
-      ...(base_address === undefined ? {} : { base_address }),
-    })),
+    .transform(
+      ({
+        base_address,
+        processor_variant,
+        ...target
+      }): typeof target & {
+        base_address?: string;
+        processor_variant?: RawProcessorVariant;
+      } => ({
+        ...target,
+        ...(base_address === undefined ? {} : { base_address }),
+        ...(processor_variant === undefined ? {} : { processor_variant }),
+      }),
+    ),
   targetIdentitySchema.extend({
     format: z.literal("gamecube-dol"),
     kind: z.literal("executable"),
@@ -414,6 +427,9 @@ export const snapshotTarget = (target: BinaryTarget): AnalysisSnapshotTarget =>
         architecture: target.architecture,
         format: target.format,
         entry_point: target.entryPoint,
+        ...(target.processorVariant === undefined
+          ? {}
+          : { processor_variant: target.processorVariant }),
         ...(rawBinaryBaseAddress(target) === target.entryPoint
           ? {}
           : { base_address: rawBinaryBaseAddress(target) }),
@@ -454,7 +470,9 @@ export const snapshotMatchesTarget = (
   (snapshot.format !== "raw-binary" ||
     (target.format === "raw-binary" &&
       snapshot.entry_point === target.entryPoint &&
-      (snapshot.base_address ?? snapshot.entry_point) === rawBinaryBaseAddress(target))) &&
+      snapshot.processor_variant === target.processorVariant &&
+      (snapshot.base_address ?? snapshot.entry_point) ===
+        rawBinaryBaseAddress(target))) &&
   (snapshot.format !== "gamecube-dol" ||
     (target.format === "gamecube-dol" &&
       snapshot.entry_point === target.entryPoint))

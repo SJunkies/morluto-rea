@@ -4,11 +4,15 @@ import {
   executableFormatHintSchema,
   type ExecutableFormatHint,
 } from "../domain/dosCom.js";
-import type { BinaryArchitecture } from "../domain/binaryTargetTypes.js";
+import type {
+  BinaryArchitecture,
+  RawProcessorVariant,
+} from "../domain/binaryTargetTypes.js";
 import {
   binaryArchitectureSchema,
   rawBinaryEntryPointSchema,
   rawBinaryBaseAddressSchema,
+  rawProcessorVariantSchema,
 } from "../domain/rawBinary.js";
 import { analysisProviderSelectorSchema } from "../contracts/providerSelection.js";
 import type { AnalysisProviderSelector } from "../contracts/providerSelection.js";
@@ -59,12 +63,19 @@ export const baseAddressSelectionOption = rawBinaryBaseAddressSchema
     "Load address of raw file offset 0 (0xhex); defaults to --entry-point",
   );
 
+export const processorVariantSelectionOption = rawProcessorVariantSchema
+  .optional()
+  .describe(
+    "Explicit cortex-m Cortex/Thumb profile for a raw ARM image; generic ARM is unchanged when omitted",
+  );
+
 /** Shared CLI flags that bind a native target interpretation. */
 export const nativeOpenOptionFields = {
   "target-format": formatSelectionOption,
   architecture: architectureSelectionOption,
   "entry-point": entryPointSelectionOption,
   "base-address": baseAddressSelectionOption,
+  "processor-variant": processorVariantSelectionOption,
   provider: providerSelectionOption,
 };
 
@@ -76,6 +87,7 @@ export interface NativeOpenCliFlags {
   readonly architecture?: BinaryArchitecture | undefined;
   readonly "entry-point"?: string | undefined;
   readonly "base-address"?: string | undefined;
+  readonly "processor-variant"?: RawProcessorVariant | undefined;
 }
 
 export const directAnalysisOptions = (
@@ -86,6 +98,7 @@ export const directAnalysisOptions = (
   architecture?: BinaryArchitecture,
   entryPoint?: string,
   baseAddress?: string,
+  processorVariant?: RawProcessorVariant,
 ) => ({
   logger,
   snapshotPath,
@@ -93,9 +106,9 @@ export const directAnalysisOptions = (
   ...(architecture === undefined ? {} : { architecture }),
   ...(entryPoint === undefined ? {} : { entryPoint }),
   ...(baseAddress === undefined ? {} : { baseAddress }),
+  ...(processorVariant === undefined ? {} : { processorVariant }),
   ...(providerId === undefined ? {} : { providerId }),
 });
-
 
 /** Map native CLI flags onto the shared one-shot analysis options. */
 export const directAnalysisOptionsFromCli = (
@@ -110,4 +123,5 @@ export const directAnalysisOptionsFromCli = (
     options.architecture,
     options["entry-point"],
     options["base-address"],
+    options["processor-variant"],
   );
