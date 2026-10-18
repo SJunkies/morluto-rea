@@ -509,7 +509,9 @@ Use `inspect_byte_entropy` to triage high- and low-entropy ranges before extract
 For other headerless images (embedded firmware without ELF/Mach-O/PE/MZ
 headers), open with `format: "raw-binary"`, `architecture` (`x86`, `x86_64`,
 `arm`, `arm64`, `6502`, or `m68k`), and `entry_point` (`0x` hex). File offset 0 is mapped at
-that address. Hopper and IDA refuse this interpretation; Ghidra uses
+that address unless a separate `base_address` is supplied. The entry must lie
+inside the loaded file; the reported entry file offset reflects that mapping.
+Hopper and IDA refuse this interpretation; Ghidra uses
 `BinaryLoader` with a generic language: big-endian for `m68k`, little-endian
 otherwise. Big-endian ARM, Thumb-only, and Cortex-M variants are unsupported.
 `6502` selects NMOS 6502; the entry and complete file mapping must fit within

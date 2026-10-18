@@ -110,6 +110,7 @@ export interface BinaryTargetResolverOptions {
   readonly formatHint?: ExecutableFormatHint;
   readonly architecture?: BinaryArchitecture;
   readonly entryPoint?: string;
+  readonly baseAddress?: string;
   readonly signal?: AbortSignal;
   readonly resources?: ArtifactResourceScope;
 }
@@ -128,6 +129,7 @@ export const parseBinaryTarget = async (
 > => {
   const cwd = options.cwd ?? process.cwd();
   const { signal } = options;
+
   const candidate = absoluteCallerPath(input, { cwd });
   // Failures before canonicalization concern the selected path itself; later
   // failures concern the canonical path opened with symbolic links rejected.
@@ -180,6 +182,7 @@ export const parseBinaryTarget = async (
     if (cause instanceof RegularFileCleanupFailure) {
       const fileFailure = cause as RegularFileCleanupFailure<TargetResolution>;
       if (options.resources === undefined)
+
         return err(
           targetFileCleanupError(
             new RetainedRegularFileCleanupFailure(fileFailure),
@@ -243,7 +246,7 @@ const readOpenedBinaryTarget = async (
   const { path, sourcePath, bundleInfoPlist } = selected;
   const bundle = bundleInfoPlist === undefined ? {} : { bundleInfoPlist };
   const hostArchitecture = options.hostArchitecture ?? process.arch;
-  const { targetKind, formatHint, signal, architecture, entryPoint } = options;
+  const { targetKind, formatHint, signal, architecture, entryPoint, baseAddress } = options;
   throwIfTargetResolutionCancelled(signal);
   const metadata = await handle.stat();
   throwIfTargetResolutionCancelled(signal);
@@ -259,6 +262,7 @@ const readOpenedBinaryTarget = async (
     const admitted = admitRawBinary({
       architecture,
       entryPoint,
+      baseAddress,
       fileBytes: metadata.size,
     });
     if (!admitted.ok)
@@ -278,12 +282,15 @@ const readOpenedBinaryTarget = async (
       availableArchitectures: [admitted.value.architecture],
       entryPoint: admitted.value.entryPoint,
       entryPointSource: admitted.value.entryPointSource,
+      ...(admitted.value.baseAddress === undefined ? {} : { baseAddress: admitted.value.baseAddress }),
+      ...(admitted.value.baseAddressSource === undefined ? {} : { baseAddressSource: admitted.value.baseAddressSource }),
     });
   }
   const pairing = rawBinarySelectionError({
     ...(formatHint === undefined ? {} : { format: formatHint }),
     architecture,
     entryPoint,
+    baseAddress,
   });
   if (pairing !== undefined)
     return err(

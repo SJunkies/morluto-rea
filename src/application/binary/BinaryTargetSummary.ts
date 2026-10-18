@@ -8,6 +8,12 @@ export const binaryTargetSummary = (target: BinaryTarget) => ({
   sha256: target.sha256,
   architecture: target.architecture ?? null,
   ...(target.format === "raw-binary" || target.format === "gamecube-dol"
-    ? { entry_point: target.entryPoint }
+    ? {
+        entry_point: target.entryPoint,
+        ...(target.format === "raw-binary" && target.baseAddress !== undefined
+          ? { base_address: target.baseAddress }
+          : {}),
+      }
+
     : {}),
 });

@@ -8,6 +8,7 @@ import type { BinaryArchitecture } from "../domain/binaryTargetTypes.js";
 import {
   binaryArchitectureSchema,
   rawBinaryEntryPointSchema,
+  rawBinaryBaseAddressSchema,
 } from "../domain/rawBinary.js";
 import { analysisProviderSelectorSchema } from "../contracts/providerSelection.js";
 import type { AnalysisProviderSelector } from "../contracts/providerSelection.js";
@@ -49,7 +50,13 @@ export const architectureSelectionOption = binaryArchitectureSchema
 export const entryPointSelectionOption = rawBinaryEntryPointSchema
   .optional()
   .describe(
-    "Caller-supplied load and entry address (0xhex); required with --target-format raw-binary, optional with gamecube-dol (must equal the DOL header entry)",
+    "Caller-supplied code entry address (0xhex); required with --target-format raw-binary, optional with gamecube-dol (must equal the DOL header entry)",
+  );
+
+export const baseAddressSelectionOption = rawBinaryBaseAddressSchema
+  .optional()
+  .describe(
+    "Load address of raw file offset 0 (0xhex); defaults to --entry-point",
   );
 
 /** Shared CLI flags that bind a native target interpretation. */
@@ -57,6 +64,7 @@ export const nativeOpenOptionFields = {
   "target-format": formatSelectionOption,
   architecture: architectureSelectionOption,
   "entry-point": entryPointSelectionOption,
+  "base-address": baseAddressSelectionOption,
   provider: providerSelectionOption,
 };
 
@@ -67,23 +75,39 @@ export interface NativeOpenCliFlags {
   readonly "target-format"?: ExecutableFormatHint | undefined;
   readonly architecture?: BinaryArchitecture | undefined;
   readonly "entry-point"?: string | undefined;
+  readonly "base-address"?: string | undefined;
 }
+
+export const directAnalysisOptions = (
+  logger: Logger,
+  snapshotPath: string | undefined,
+  providerId: AnalysisProviderSelector | undefined,
+  formatHint?: ExecutableFormatHint,
+  architecture?: BinaryArchitecture,
+  entryPoint?: string,
+  baseAddress?: string,
+) => ({
+  logger,
+  snapshotPath,
+  ...(formatHint === undefined ? {} : { formatHint }),
+  ...(architecture === undefined ? {} : { architecture }),
+  ...(entryPoint === undefined ? {} : { entryPoint }),
+  ...(baseAddress === undefined ? {} : { baseAddress }),
+  ...(providerId === undefined ? {} : { providerId }),
+});
+
 
 /** Map native CLI flags onto the shared one-shot analysis options. */
 export const directAnalysisOptionsFromCli = (
   logger: Logger,
   options: NativeOpenCliFlags,
-) => ({
-  logger,
-  snapshotPath: options.snapshot,
-  ...(options["target-format"] === undefined
-    ? {}
-    : { formatHint: options["target-format"] }),
-  ...(options.architecture === undefined
-    ? {}
-    : { architecture: options.architecture }),
-  ...(options["entry-point"] === undefined
-    ? {}
-    : { entryPoint: options["entry-point"] }),
-  ...(options.provider === undefined ? {} : { providerId: options.provider }),
-});
+) =>
+  directAnalysisOptions(
+    logger,
+    options.snapshot,
+    options.provider,
+    options["target-format"],
+    options.architecture,
+    options["entry-point"],
+    options["base-address"],
+  );
