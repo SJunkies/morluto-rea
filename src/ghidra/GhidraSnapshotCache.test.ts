@@ -314,6 +314,12 @@ describe("Ghidra snapshot profile admission", () => {
       legacy: "ghidra-function-boundary-limitations-v3",
     },
     {
+      parameter: "indirect_branch_inventory",
+      current: "listing-computed-jumps-typed-warning-address-v2",
+      legacy: "listing-computed-jumps-decompiler-outcome-v1",
+
+    },
+    {
       parameter: "instruction_references",
       current: "exact-address-incoming-without-synthetic-entry-v2",
       legacy: "exact-address-incoming-v1",

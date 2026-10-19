@@ -67,10 +67,11 @@ const sharedAnalysisSemantics = {
   procedure_file_offset_resolution:
     "address-first-unique-target-source-mapping-v2",
   instruction_flow_evidence: "decoded-return-pcode-v1",
-  indirect_branch_inventory: "listing-computed-jumps-decompiler-outcome-v1",
+  indirect_branch_inventory: "listing-computed-jumps-typed-warning-address-v2",
   instruction_references: "exact-address-incoming-without-synthetic-entry-v2",
   function_boundary_observations: "ghidra-function-boundary-limitations-v4",
 } as const;
+
 
 /**
  * The processor language REA pins for this target, or undefined when Ghidra may
@@ -235,6 +236,7 @@ export const resolveGhidraAnalysisProfile = async (
           ...binaryLoaderPolicy(target, installation),
           load_image_evidence: "independent-raw-mapping-context-v5",
 
+
           loader: "BinaryLoader",
           language_id: language.languageId,
           compiler_spec_id: language.compilerSpecId,
@@ -328,6 +330,7 @@ export const resolveGhidraAnalysisProfile = async (
             }
           : {}),
         ...sharedAnalysisSemantics,
+
 
         no_return_repair:
           installation.platform === "win32"
