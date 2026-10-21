@@ -21,9 +21,10 @@ import {
 import type { SourceMapLeaf } from "../../domain/sourceMapEnvelope.js";
 import type { JavaScriptStaticAnalysis } from "../../domain/javascript/javascriptStaticAnalysisTypes.js";
 import { failedJavaScriptStaticAnalysis } from "../../domain/javascript/javascriptStaticAnalysisHelpers.js";
-import type {
-  JavaScriptArtifactFile,
-  JavaScriptArtifactFileSet,
+import {
+  type JavaScriptArtifactFile,
+  type JavaScriptArtifactFileSet,
+  unavailableJavaScriptSourceReason,
 } from "../../domain/javascript/javascriptArtifactFiles.js";
 import {
   javaScriptArtifactTextExclusion,
@@ -148,6 +149,13 @@ export const analyzeAndAdoptJavaScriptArtifactFiles = async (
           },
         });
         await completeJavaScriptAnalysisSteps(steps, signal);
+        if (file.kind === "javascript" && !file.text.included)
+          projection.recordUnavailableFile(
+            file,
+            unavailableJavaScriptSourceReason(file.text.reason),
+            null,
+            "incomplete-module",
+          );
         continue;
       }
       const result = await worker.analyze(
