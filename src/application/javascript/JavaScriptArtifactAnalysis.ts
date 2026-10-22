@@ -99,6 +99,70 @@ export const analyzeJavaScriptArtifactFiles = (
     return ir;
   });
 
+/**
+ * Project each file's full IR immediately, retaining only later module facts.
+ * Parsing, analysis and each projection pass run as separate steps, so control
+ * messages and cancellation are handled within one large file as well.
+ */
+export const analyzeAndProjectJavaScriptArtifactFiles = async (
+  fileSet: JavaScriptArtifactFileSet,
+  projectSemantics:
+    | ((
+        file: JavaScriptArtifactFile,
+        ir: JavaScriptSemanticIr,
+      ) => Iterator<void, void> | void)
+    | Pick<
+        JavaScriptSemanticGraphProjection,
+        "projectFile" | "recordUnavailableFile"
+      >,
+  beforeFile?: (
+    file: JavaScriptArtifactFile,
+    completed: number,
+    total: number,
+  ) => Promise<void>,
+  signal?: AbortSignal,
+): Promise<JavaScriptModuleArtifactAnalysis> => {
+  const state = emptyArtifactAnalysis<JavaScriptModuleSemanticIr>();
+  const projectFn =
+    typeof projectSemantics === "function"
+      ? projectSemantics
+      : projectSemantics.projectFile.bind(projectSemantics);
+  const recordUnavailable =
+    typeof projectSemantics === "function"
+      ? "recordUnavailableFile" in projectSemantics &&
+        typeof projectSemantics.recordUnavailableFile === "function"
+        ? (projectSemantics.recordUnavailableFile as JavaScriptSemanticGraphProjection["recordUnavailableFile"])
+        : undefined
+      : projectSemantics.recordUnavailableFile.bind(projectSemantics);
+  const projectFileSemantics = function* (
+    file: JavaScriptArtifactFile,
+    ir: JavaScriptSemanticIr,
+  ): Generator<void, JavaScriptModuleSemanticIr> {
+    const projection = projectFn(file, ir);
+    if (projection !== undefined) while (projection.next().done !== true) yield;
+    return projectJavaScriptModuleSemantics(ir);
+  };
+  const context = { state, projectSemantics: projectFileSemantics };
+  for (const [index, file] of fileSet.files.entries()) {
+    // Let progress, cancellation and garbage collection run between files.
+    await setImmediate();
+    await beforeFile?.(file, index, fileSet.files.length);
+    await completeJavaScriptAnalysisSteps(
+      analyzeArtifactFileSteps(file, context),
+      signal,
+    );
+    if (file.kind === "javascript" && !file.text.included)
+      recordUnavailable?.(
+        file,
+        unavailableJavaScriptSourceReason(file.text.reason),
+        null,
+        "incomplete-module",
+      );
+  }
+  return finalizeArtifactAnalysis(state);
+};
+
+
 /** Analyze sources behind a hard heap boundary, retaining collected facts on interruption. */
 export const analyzeAndAdoptJavaScriptArtifactFiles = async (
   fileSet: JavaScriptArtifactFileSet,
@@ -134,13 +198,29 @@ export const analyzeAndAdoptJavaScriptArtifactFiles = async (
         }
         continue;
       }
+      if (file.kind === "javascript" && !file.text.included) {
+        state.files.push({ file, javascript: null, semantic: null });
+        projection.recordUnavailableFile(
+          file,
+          unavailableJavaScriptSourceReason(file.text.reason),
+          null,
+          "incomplete-module",
+        );
+        if (signal?.aborted === true) {
+          interruption = new AnalysisCancelledError(
+            "analyze_javascript_application",
+          );
+          break;
+        }
+        continue;
+      }
       if (signal?.aborted === true)
         throw new AnalysisCancelledError("analyze_javascript_application", {
           cause: signal.reason,
         });
       await beforeFile(file, selectedFileIndex++, selectedFileCount);
       analysisStarted = true;
-      if (file.kind !== "javascript" || !file.text.included) {
+      if (file.kind !== "javascript") {
         const steps = analyzeArtifactFileSteps(file, {
           state,
           projectSemantics: function* (_file, ir) {
@@ -149,13 +229,6 @@ export const analyzeAndAdoptJavaScriptArtifactFiles = async (
           },
         });
         await completeJavaScriptAnalysisSteps(steps, signal);
-        if (file.kind === "javascript" && !file.text.included)
-          projection.recordUnavailableFile(
-            file,
-            unavailableJavaScriptSourceReason(file.text.reason),
-            null,
-            "incomplete-module",
-          );
         continue;
       }
       const result = await worker.analyze(
@@ -275,6 +348,7 @@ export const analyzeAndAdoptJavaScriptArtifactFiles = async (
         null,
         "incomplete-module",
       );
+
       break;
     }
   }
