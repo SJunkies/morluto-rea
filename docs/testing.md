@@ -1325,9 +1325,10 @@ file-backed `0x11111111` value with a fresh decompilation after the production
 bridge marks the block volatile, and checks the loader-value limitation,
 unchanged source `FileBytes`, and unchanged read/write/execute permissions. The
 lane never executes the fixture and does not inject a relocation or reference.
-The installed native decompiler check is conditional and reports its absence;
-Ghidra/JDK and a Linux C compiler remain required.
-
+The native decompiler is required to compare baseline and protected pseudocode;
+Ghidra/JDK with that decompiler and a Linux C compiler are required.
+The change-selected [Ghidra bridge CI lane](../.github/workflows/ghidra-bridge-sources.yml)
+runs this verifier with its checksum-verified Ghidra 12.1.4 distribution.
 
 `npm run verify:ghidra:address-context` runs on Linux with a caller-installed
 Ghidra, full JDK, and an x86-64 ELF GCC toolchain (`CC` selects another compatible
