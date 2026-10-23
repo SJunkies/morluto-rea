@@ -209,6 +209,7 @@ export const analyzeAndAdoptJavaScriptArtifactFiles = async (
         if (signal?.aborted === true) {
           interruption = new AnalysisCancelledError(
             "analyze_javascript_application",
+            { cause: signal.reason },
           );
           break;
         }
