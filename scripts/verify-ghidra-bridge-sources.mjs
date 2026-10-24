@@ -18,7 +18,7 @@ import {
   SUPPORTED_GHIDRA_VERSION,
   SUPPORTED_GHIDRA_JAVA_MAJOR,
   ghidraReleaseAccepted,
-  ghidraReleaseLine,
+  ghidraAcceptedReleaseLines,
 } from "../src/ghidra/GhidraReleasePolicy.ts";
 
 const args = process.argv.slice(2);
@@ -60,7 +60,7 @@ const bridge = join(root, "bridge/ghidra");
 const install = process.env.GHIDRA_INSTALL_DIR;
 if (!install)
   fail(
-    `Set GHIDRA_INSTALL_DIR to an existing Ghidra ${ghidraReleaseLine()} installation (verified with ${SUPPORTED_GHIDRA_VERSION}). REA does not install Ghidra.`,
+    `Set GHIDRA_INSTALL_DIR to an existing Ghidra ${ghidraAcceptedReleaseLines()} installation (verified with ${SUPPORTED_GHIDRA_VERSION}). REA does not install Ghidra.`,
   );
 const properties = await readFile(
   join(install, "Ghidra/application.properties"),
@@ -75,7 +75,7 @@ if (!parsedProperties.ok) fail(parsedProperties.error);
 const version = parsedProperties.value.get("application.version");
 if (!ghidraReleaseAccepted(version))
   fail(
-    `Bridge sources require Ghidra ${ghidraReleaseLine()} (verified with ${SUPPORTED_GHIDRA_VERSION}). Observed application.version=${version === undefined ? "missing" : JSON.stringify(version)}.`,
+    `Bridge sources require Ghidra ${ghidraAcceptedReleaseLines()} (verified with ${SUPPORTED_GHIDRA_VERSION}). Observed application.version=${version === undefined ? "missing" : JSON.stringify(version)}.`,
   );
 if (args[0] === "--verified-sdk" && version !== SUPPORTED_GHIDRA_VERSION)
   fail(
@@ -106,7 +106,7 @@ if (banner.error || banner.status !== 0)
 const major = Number(/^javac (\d+)/mu.exec(output(banner))?.[1]);
 if (!Number.isInteger(major) || major < SUPPORTED_GHIDRA_JAVA_MAJOR)
   fail(
-    `Ghidra ${ghidraReleaseLine()} compiles bridge scripts with Java ${SUPPORTED_GHIDRA_JAVA_MAJOR} or newer. Observed: ${output(banner) || "no version"}. REA does not install or upgrade Java.`,
+    `Ghidra ${ghidraAcceptedReleaseLines()} compiles bridge scripts with Java ${SUPPORTED_GHIDRA_JAVA_MAJOR} or newer. Observed: ${output(banner) || "no version"}. REA does not install or upgrade Java.`,
   );
 
 const jars = (

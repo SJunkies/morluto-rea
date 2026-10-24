@@ -3532,7 +3532,9 @@ describe("Ghidra disabled analyzer options", () => {
       "Objective-C Message Analyzer",
     ]);
   });
+});
 
+describe("Ghidra disabled analyzer options with raw-profile guards", () => {
   it("binds analyzer overrides and raw import settings in one profile", async () => {
     const launchers: GhidraHeadlessLauncher[] = [];
     const ghidra = configuredProvider(

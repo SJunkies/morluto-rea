@@ -942,6 +942,33 @@ describe("Ghidra malformed property admission", () => {
 });
 
 describe("Ghidra installation version admission", () => {
+  it("accepts Ghidra 12.2 as an unverified bridge-compatible release", async () => {
+    const result = await inspectGhidraInstallation(
+      {
+        resourceOwner: inspectionResources.owner,
+        environment: {},
+        installDir: INSTALL,
+        platform: "linux",
+        architecture: "x64",
+      },
+      host({
+        readText: () =>
+          "application.version=12.2\napplication.java.min=21\n",
+      }),
+    );
+    expect(result).toMatchObject({
+      status: "available",
+      providerVersion: "12.2",
+      checks: expect.arrayContaining([
+        expect.objectContaining({
+          name: "version",
+          status: "passed",
+          detail: expect.stringContaining("12.2.x"),
+        }),
+      ]),
+    });
+  });
+
   it.each([
     {
       name: "JDK above the installation maximum",
@@ -980,7 +1007,7 @@ describe("Ghidra installation version admission", () => {
     },
     {
       name: "different Ghidra line",
-      readText: () => "application.version=12.2.0\napplication.java.min=21\n",
+      readText: () => "application.version=13.0.0\napplication.java.min=21\n",
       probeJava: () => javaProbeOk<GhidraJavaObservation>(JAVA),
       failed: "version",
       code: "unsupported_version",

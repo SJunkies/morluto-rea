@@ -41,7 +41,7 @@ import {
 import {
   ghidraReleaseAccepted,
   ghidraReleaseCompatibility,
-  ghidraReleaseLine,
+  ghidraAcceptedReleaseLines,
   ghidraVersionDetail,
   SUPPORTED_GHIDRA_VERSION,
 } from "./GhidraReleasePolicy.js";
@@ -710,7 +710,7 @@ const configurationCheck = (
       passed: installDir !== null,
       code: "not_configured",
       detail: installDir ?? "GHIDRA_INSTALL_DIR is not set",
-      remediation: `Set GHIDRA_INSTALL_DIR to an extracted Ghidra ${ghidraReleaseLine()} release directory.`,
+      remediation: `Set GHIDRA_INSTALL_DIR to an extracted Ghidra ${ghidraAcceptedReleaseLines()} release directory.`,
     });
   const settings = relative.join(" and ");
   return installationCheck({
@@ -998,7 +998,7 @@ const versionCheck = (
       parseError == null
         ? ghidraVersionDetail(raw)
         : `application.properties could not be parsed: ${parseError}`,
-    remediation: `Install a Ghidra ${ghidraReleaseLine()} release (verified with ${SUPPORTED_GHIDRA_VERSION}), or update REA for another Ghidra line.`,
+    remediation: `Install a Ghidra ${ghidraAcceptedReleaseLines()} release (verified with ${SUPPORTED_GHIDRA_VERSION}), or update REA for another Ghidra line.`,
   });
 };
 
