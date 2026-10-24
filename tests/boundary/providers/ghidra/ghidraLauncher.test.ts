@@ -230,6 +230,7 @@ describe("Ghidra GameCube DOL loader", () => {
           languageId: "ARM:LE:32:v7",
           compilerSpecId: "default",
           baseAddr: "0x8000000",
+          entryPoint: "0x8000004",
         },
       },
     ],
