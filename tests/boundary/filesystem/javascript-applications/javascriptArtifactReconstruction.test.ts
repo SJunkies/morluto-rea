@@ -20,6 +20,7 @@ import {
 import {
   analyzeJavaScriptArtifactFiles,
   analyzeAndAdoptJavaScriptArtifactFiles,
+  analyzeAndProjectJavaScriptArtifactFiles,
 } from "../../../../src/application/javascript/JavaScriptArtifactAnalysis.js";
 import { buildJavaScriptArtifactGraph } from "../../../../src/application/javascript/JavaScriptArtifactGraphBuilder.js";
 import {

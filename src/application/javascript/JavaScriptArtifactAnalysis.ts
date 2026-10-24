@@ -154,7 +154,8 @@ export const analyzeAndProjectJavaScriptArtifactFiles = async (
     if (file.kind === "javascript" && !file.text.included)
       recordUnavailable?.(
         file,
-        unavailableJavaScriptSourceReason(file.text.reason),
+        javaScriptSemanticSourceExclusion(file, null) ??
+          unavailableJavaScriptSourceReason(file.text.reason),
         null,
         "incomplete-module",
       );
@@ -206,23 +207,6 @@ export const analyzeAndAdoptJavaScriptArtifactFiles = async (
     try {
       await setImmediate();
       if (classifyUnavailableSource(file, state, projection)) {
-        if (signal?.aborted === true) {
-          interruption = new AnalysisCancelledError(
-            "analyze_javascript_application",
-            { cause: signal.reason },
-          );
-          break;
-        }
-        continue;
-      }
-      if (file.kind === "javascript" && !file.text.included) {
-        state.files.push({ file, javascript: null, semantic: null });
-        projection.recordUnavailableFile(
-          file,
-          unavailableJavaScriptSourceReason(file.text.reason),
-          null,
-          "incomplete-module",
-        );
         if (isSignalAborted(signal)) {
           interruption = new AnalysisCancelledError(
             "analyze_javascript_application",
@@ -230,18 +214,24 @@ export const analyzeAndAdoptJavaScriptArtifactFiles = async (
           );
           break;
         }
-        try {
-          await beforeFile(file, selectedFileIndex++, selectedFileCount);
-        } catch (cause: unknown) {
-          interruption = translateAnalysisInterruption(cause, signal);
-          break;
-        }
-        if (isSignalAborted(signal)) {
-          interruption = new AnalysisCancelledError(
-            "analyze_javascript_application",
-            { cause: signal?.reason },
-          );
-          break;
+        if (
+          file.kind === "javascript" &&
+          !file.text.included &&
+          file.text.reason === "invalid-utf8"
+        ) {
+          try {
+            await beforeFile(file, selectedFileIndex++, selectedFileCount);
+          } catch (cause: unknown) {
+            interruption = translateAnalysisInterruption(cause, signal);
+            break;
+          }
+          if (isSignalAborted(signal)) {
+            interruption = new AnalysisCancelledError(
+              "analyze_javascript_application",
+              { cause: signal?.reason },
+            );
+            break;
+          }
         }
         continue;
       }
